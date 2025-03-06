@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Challenge</title>
+    <style>
+        :root {
+            --primary: #6a00ff;
+            --secondary: #00d9ff;
+            --bg-dark: #0a0a1a;
+            --text-light: #ffffff;
+            --success: #00ff88;
+        }
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+            padding: 0 20px;
+        }
+        
+        .header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            animation: pulse 3s infinite alternate;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 4px 20px rgba(106, 0, 255, 0.4); }
+            100% { box-shadow: 0 4px 30px rgba(0, 217, 255, 0.7); }
+        }
+        
+        .login-form {
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            width: 100%;
+            max-width: 400px;
+            transition: all 0.3s ease;
+        }
+        
+        .login-form:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(106, 0, 255, 0.3);
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            background-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 2px var(--secondary);
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: var(--text-light);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(106, 0, 255, 0.4);
+        }
+        
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        .puzzle-container {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+        }
+        
+        .puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .puzzle-tile {
+            background: linear-gradient(135deg, rgba(106, 0, 255, 0.2), rgba(0, 217, 255, 0.2));
+            border-radius: 5px;
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: none;
+            color: var(--text-light);
+        }
+        
+        .puzzle-tile:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(106, 0, 255, 0.3);
+        }
+        
+        .puzzle-tile.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(106, 0, 255, 0.5);
+        }
+        
+        .puzzle-hint {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+        
+        .puzzle-progress {
+            height: 10px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .puzzle-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+        
+        .success-container {
+            display: none;
+            text-align: center;
+            animation: fadeIn 1s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .key-display {
+            font-family: monospace;
+            font-size: 1.2rem;
+            padding: 15px;
+            margin: 20px 0;
+            background-color: rgba(0, 255, 136, 0.1);
+            border: 1px solid var(--success);
+            border-radius: 5px;
+            animation: glow 2s infinite alternate;
+        }
+        
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px rgba(0, 255, 136, 0.3); }
+            100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.7); }
+        }
+        
+        .success-message {
+            font-size: 1.5rem;
+            color: var(--success);
+            margin-bottom: 20px;
+        }
+        
+        .fireworks {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        You've made it from 1 to 100 in 60 seconds! Please use your key.
+    </div>
+    
+    <div class="container">
+        <div class="login-form" id="loginForm">
+            <h2>Enter Access Key</h2>
+            <input type="password" id="keyInput" placeholder="Enter your key">
+            <button onclick="checkKey()">Access Puzzle</button>
+        </div>
+        
+        <div class="puzzle-container" id="puzzleContainer">
+            <h2>Sequence Puzzle Challenge</h2>
+            <div class="puzzle-hint">Find the pattern and complete the sequence.</div>
+            <div class="puzzle-grid" id="puzzleGrid"></div>
+            <div class="puzzle-progress">
+                <div class="puzzle-progress-bar" id="progressBar"></div>
+            </div>
+            <div>Attempts remaining: <span id="attemptsLeft">5</span></div>
+        </div>
+        
+        <div class="success-container" id="successContainer">
+            <div class="success-message">Congratulations! You're one of the few who made it this far.</div>
+            <p>Please save your unique access key and await further instructions.</p>
+            <div class="key-display" id="successKey">X8#rT!k@P$z9&L*m2Q</div>
+            <p>This key is your identifier. Keep it secure.</p>
+        </div>
+    </div>
+    
+    <canvas class="particles" id="particles"></canvas>
+    <canvas class="fireworks" id="fireworks"></canvas>
+    
+    <script>
+        // Particle background
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+                this.color = Math.random() > 0.5 ? '#6a00ff' : '#00d9ff';
+                this.alpha = Math.random() * 0.5 + 0.1;
+            }
+            
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+            
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color + Math.floor(this.alpha * 255).toString(16).padStart(2, '0');
+                ctx.fill();
+            }
+        }
+        
+        function init() {
+            particles = [];
+            for (let i = 0; i < 100; i++) {
+                particles.push(new Particle());
+            }
+        }
+        
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        init();
+        animate();
+        
+        // Login functionality
+        const correctKey = "kk9#kd8!!s9kd(ls)!%";
+        
+        function checkKey() {
+            const keyInput = document.getElementById('keyInput').value;
+            if (keyInput === correctKey) {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('puzzleContainer').style.display = 'block';
+                initPuzzle();
+            } else {
+                document.getElementById('keyInput').value = '';
+                document.getElementById('keyInput').style.border = '2px solid red';
+                setTimeout(() => {
+                    document.getElementById('keyInput').style.border = 'none';
+                }, 1000);
+            }
+        }
+        
+        // Puzzle functionality
+        let sequence = [];
+        let userSequence = [];
+        let attemptsLeft = 5;
+        
+        function initPuzzle() {
+            // Generate fibonacci-like sequence with a twist
+            sequence = [3, 5, 8, 13, 21, 34, 55, 89, 144];
+            
+            const puzzleGrid = document.getElementById('puzzleGrid');
+            puzzleGrid.innerHTML = '';
+            
+            // Create number tiles
+            for (let i = 0; i < 9; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'puzzle-tile';
+                tile.dataset.index = i;
+                
+                // Show first 6 numbers, hide the last 3
+                if (i < 6) {
+                    tile.textContent = sequence[i];
+                    tile.style.cursor = 'default';
+                } else {
+                    tile.textContent = '?';
+                    tile.addEventListener('click', handleTileClick);
+                }
+                
+                puzzleGrid.appendChild(tile);
+            }
+            
+            userSequence = sequence.slice(0, 6);
+            updateProgressBar();
+            document.getElementById('attemptsLeft').textContent = attemptsLeft;
+        }
+        
+        function handleTileClick(e) {
+            const tile = e.target;
+            const index = parseInt(tile.dataset.index);
+            
+            if (tile.classList.contains('active')) return;
+            
+            // Activate tile to enter number
+            tile.classList.add('active');
+            tile.textContent = '';
+            
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.style.width = '80%';
+            input.style.height = '60%';
+            input.style.textAlign = 'center';
+            input.style.fontSize = '1.2rem';
+            input.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+            input.style.border = 'none';
+            
+            input.addEventListener('blur', () => {
+                if (input.value) {
+                    processAnswer(index, parseInt(input.value));
+                } else {
+                    tile.classList.remove('active');
+                    tile.textContent = '?';
+                }
+            });
+            
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && input.value) {
+                    processAnswer(index, parseInt(input.value));
+                }
+            });
+            
+            tile.appendChild(input);
+            input.focus();
+        }
+        
+        function processAnswer(index, value) {
+            const tile = document.querySelector(`.puzzle-tile[data-index="${index}"]`);
+            const correctValue = sequence[index];
+            
+            if (value === correctValue) {
+                tile.textContent = value;
+                tile.style.backgroundColor = 'rgba(0, 255, 136, 0.3)';
+                userSequence[index] = value;
+                updateProgressBar();
+                
+                // Check if puzzle is complete
+                if (userSequence.length === sequence.length && !userSequence.includes(undefined)) {
+                    checkPuzzleComplete();
+                }
+            } else {
+                tile.classList.remove('active');
+                tile.textContent = '?';
+                tile.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+                setTimeout(() => {
+                    tile.style.backgroundColor = '';
+                }, 1000);
+                
+                attemptsLeft--;
+                document.getElementById('attemptsLeft').textContent = attemptsLeft;
+                
+                if (attemptsLeft <= 0) {
+                    resetPuzzle();
+                }
+            }
+        }
+        
+        function updateProgressBar() {
+            const filledCount = userSequence.filter(item => item !== undefined).length;
+            const progress = (filledCount / sequence.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+        
+        function checkPuzzleComplete() {
+            const allCorrect = userSequence.every((val, index) => val === sequence[index]);
+            
+            if (allCorrect) {
+                document.getElementById('puzzleContainer').style.display = 'none';
+                document.getElementById('successContainer').style.display = 'block';
+                launchFireworks();
+            }
+        }
+        
+        function resetPuzzle() {
+            // Reset puzzle state
+            userSequence = sequence.slice(0, 6);
+            attemptsLeft = 5;
+            document.getElementById('attemptsLeft').textContent = attemptsLeft;
+            
+            const puzzleTiles = document.querySelectorAll('.puzzle-tile');
+            puzzleTiles.forEach((tile, index) => {
+                if (index >= 6) {
+                    tile.textContent = '?';
+                    tile.classList.remove('active');
+                    tile.style.backgroundColor = '';
+                }
+            });
+            
+            updateProgressBar();
+        }
+        
+        // Fireworks for success
+        const fireworksCanvas = document.getElementById('fireworks');
+        const fwCtx = fireworksCanvas.getContext('2d');
+        let fireworks = [];
+        let particles2 = [];
+        
+        function resizeFireworksCanvas() {
+            fireworksCanvas.width = window.innerWidth;
+            fireworksCanvas.height = window.innerHeight;
+        }
+        
+        window.addEventListener('resize', resizeFireworksCanvas);
+        
+        class Firework {
+            constructor() {
+                this.x = Math.random() * fireworksCanvas.width;
+                this.y = fireworksCanvas.height;
+                this.targetY = Math.random() * fireworksCanvas.height / 2;
+                this.speed = Math.random() * 3 + 2;
+                this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                this.size = 4;
+            }
+            
+            update() {
+                this.y -= this.speed;
+                
+                if (this.y <= this.targetY) {
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            draw() {
+                fwCtx.beginPath();
+                fwCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                fwCtx.fillStyle = this.color;
+                fwCtx.fill();
+            }
+            
+            explode() {
+                for (let i = 0; i < 50; i++) {
+                    particles2.push(new FireworkParticle(this.x, this.y, this.color));
+                }
+            }
+        }
+        
+        class FireworkParticle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 3 + 1;
+                this.color = color;
+                this.speedX = Math.random() * 6 - 3;
+                this.speedY = Math.random() * 6 - 3;
+                this.gravity = 0.1;
+                this.life = 100;
+            }
+            
+            update() {
+                this.speedY += this.gravity;
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.life -= 1;
+                
+                if (this.life <= 0) {
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            draw() {
+                fwCtx.globalAlpha = this.life / 100;
+                fwCtx.beginPath();
+                fwCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                fwCtx.fillStyle = this.color;
+                fwCtx.fill();
+                fwCtx.globalAlpha = 1;
+            }
+        }
+        
+        function launchFireworks() {
+            resizeFireworksCanvas();
+            fireworks = [];
+            particles2 = [];
+            
+            // Create interval to launch fireworks
+            let fireworksInterval = setInterval(() => {
+                fireworks.push(new Firework());
+                
+                if (fireworks.length > 20) {
+                    clearInterval(fireworksInterval);
+                }
+            }, 300);
+            
+            animateFireworks();
+        }
+        
+        function animateFireworks() {
+            fwCtx.fillStyle = 'rgba(10, 10, 26, 0.2)';
+            fwCtx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+            
+            for (let i = fireworks.length - 1; i >= 0; i--) {
+                if (!fireworks[i].update()) {
+                    fireworks[i].explode();
+                    fireworks.splice(i, 1);
+                } else {
+                    fireworks[i].draw();
+                }
+            }
+            
+            for (let i = particles2.length - 1; i >= 0; i--) {
+                if (!particles2[i].update()) {
+                    particles2.splice(i, 1);
+                } else {
+                    particles2[i].draw();
+                }
+            }
+            
+            if (fireworks.length > 0 || particles2.length > 0) {
+                requestAnimationFrame(animateFireworks);
+            }
+        }
+        
+        // Initialize access key for success
+        const successKey = "X8#rT!k@P$z9&L*m2Q";
+        document.getElementById('successKey').textContent = successKey;
+    </script>
+</body>
+</html>
